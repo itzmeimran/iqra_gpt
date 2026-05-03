@@ -1,18 +1,25 @@
 import { useEffect, useState } from "react";
 import { useChatStore } from "../store/chatStore";
+import { useModelsStore } from "../store/modelsStore";
 
 interface Props {
   onMobileMenuOpen: () => void;
 }
 
 export const Header = ({ onMobileMenuOpen }: Props) => {
-  const session = useChatStore((s) => s.getActiveSession());
+  const activeSession = useChatStore((state) => state.getActiveSession());
+  const messages = useChatStore((state) => state.messages);
+  const { selectedModel, fetchModels } = useModelsStore();
   const [theme, setTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     const isDark = document.documentElement.classList.contains("dark");
     setTheme(isDark ? "dark" : "light");
   }, []);
+
+  useEffect(() => {
+    void fetchModels();
+  }, [fetchModels]);
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -54,15 +61,9 @@ export const Header = ({ onMobileMenuOpen }: Props) => {
             color: "var(--text-secondary)",
           }}
           id="mobile-menu-btn"
+          type="button"
         >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-          >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             <line x1="3" y1="6" x2="21" y2="6" />
             <line x1="3" y1="12" x2="21" y2="12" />
             <line x1="3" y1="18" x2="21" y2="18" />
@@ -78,14 +79,12 @@ export const Header = ({ onMobileMenuOpen }: Props) => {
               lineHeight: 1,
             }}
           >
-            {session?.title ?? "Select a chat"}
+            {activeSession?.title ?? "Select a chat"}
           </h2>
-          {session && (
-            <p
-              style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}
-            >
-              {session.messages.length} message
-              {session.messages.length !== 1 ? "s" : ""}
+
+          {activeSession && (
+            <p style={{ fontSize: 11, color: "var(--text-muted)", marginTop: 3 }}>
+              {messages.length} message{messages.length !== 1 ? "s" : ""}
             </p>
           )}
         </div>
@@ -94,12 +93,9 @@ export const Header = ({ onMobileMenuOpen }: Props) => {
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
         <button
           onClick={toggleTheme}
-          title={
-            theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
-          }
-          aria-label={
-            theme === "dark" ? "Switch to light mode" : "Switch to dark mode"
-          }
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          type="button"
           style={{
             width: 36,
             height: 36,
@@ -114,15 +110,15 @@ export const Header = ({ onMobileMenuOpen }: Props) => {
             transition: "all 0.2s ease",
             boxShadow: "var(--shadow-sm)",
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "var(--hover-bg)";
-            e.currentTarget.style.color = "var(--text-primary)";
-            e.currentTarget.style.borderColor = "var(--border-strong)";
+          onMouseEnter={(event) => {
+            event.currentTarget.style.background = "var(--hover-bg)";
+            event.currentTarget.style.color = "var(--text-primary)";
+            event.currentTarget.style.borderColor = "var(--border-strong)";
           }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "var(--bg-secondary)";
-            e.currentTarget.style.color = "var(--text-secondary)";
-            e.currentTarget.style.borderColor = "var(--border)";
+          onMouseLeave={(event) => {
+            event.currentTarget.style.background = "var(--bg-secondary)";
+            event.currentTarget.style.color = "var(--text-secondary)";
+            event.currentTarget.style.borderColor = "var(--border)";
           }}
         >
           {theme === "dark" ? <SunIcon /> : <MoonIcon />}
@@ -156,7 +152,7 @@ export const Header = ({ onMobileMenuOpen }: Props) => {
               fontWeight: 500,
             }}
           >
-            GPT-4o
+            {selectedModel || activeSession?.model || "Model"}
           </span>
         </div>
       </div>
@@ -171,28 +167,14 @@ export const Header = ({ onMobileMenuOpen }: Props) => {
 };
 
 const SunIcon = () => (
-  <svg
-    width="17"
-    height="17"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.9"
-  >
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
     <circle cx="12" cy="12" r="4" />
     <path d="M12 2v2.2M12 19.8V22M4.93 4.93l1.56 1.56M17.51 17.51l1.56 1.56M2 12h2.2M19.8 12H22M4.93 19.07l1.56-1.56M17.51 6.49l1.56-1.56" />
   </svg>
 );
 
 const MoonIcon = () => (
-  <svg
-    width="17"
-    height="17"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.9"
-  >
-    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" />
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9">
+    <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 1 0 9.8 9.8Z" />
   </svg>
 );

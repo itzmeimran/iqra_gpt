@@ -1,20 +1,36 @@
-import { useRef } from "react";
-import type { Message } from "../types";
+import type { CSSProperties } from "react";
+import { useMemo } from "react";
 import { useAuthStore } from "../store/authStore";
+import type { ChatMessage as ChatMessageType } from "../store/chatStore";
 
 interface Props {
-  message: Message;
+  message: ChatMessageType;
 }
 
 export const ChatMessage = ({ message }: Props) => {
-  const user = useAuthStore((s) => s.user);
+  const user = useAuthStore((state) => state.user);
   const isUser = message.role === "user";
-  const dotRef = useRef<HTMLSpanElement>(null);
 
-  const timestamp = new Date(message.timestamp).toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  const timestamp = useMemo(() => {
+    const parsed = new Date(message.createdAt);
+    if (Number.isNaN(parsed.getTime())) return "";
+    return parsed.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }, [message.createdAt]);
+
+  const bubbleStyle: CSSProperties = isUser
+    ? {
+        background:
+          "linear-gradient(135deg, rgba(167,139,250,0.22), rgba(124,58,237,0.18))",
+        border: "1px solid rgba(124, 58, 237, 0.28)",
+        color: "var(--text-primary)",
+        boxShadow: "0 10px 24px rgba(124, 58, 237, 0.14)",
+      }
+    : {
+        background: "var(--card-bg)",
+        border: "1px solid var(--border)",
+        color: "var(--text-primary)",
+        boxShadow: "var(--shadow-sm)",
+      };
 
   return (
     <div
@@ -27,7 +43,20 @@ export const ChatMessage = ({ message }: Props) => {
         padding: "6px 0",
       }}
     >
-      {/* Avatar */}
+      <style>{`
+        @keyframes fadeUp {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes blink {
+          50% { opacity: 0; }
+        }
+        @keyframes pulseDot {
+          0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+          40% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+
       <div
         style={{
           width: 34,
@@ -53,10 +82,9 @@ export const ChatMessage = ({ message }: Props) => {
               }),
         }}
       >
-        {isUser ? (user?.name?.[0]?.toUpperCase() ?? "U") : <AiIcon />}
+        {isUser ? user?.name?.[0]?.toUpperCase() ?? "U" : <AiIcon />}
       </div>
 
-      {/* Bubble */}
       <div
         style={{
           maxWidth: "72%",
@@ -72,41 +100,27 @@ export const ChatMessage = ({ message }: Props) => {
             borderRadius: isUser ? "20px 6px 20px 20px" : "6px 20px 20px 20px",
             fontSize: 14,
             lineHeight: 1.7,
+            whiteSpace: "pre-wrap",
+            wordBreak: "break-word",
             backdropFilter: "blur(10px)",
             WebkitBackdropFilter: "blur(10px)",
-            ...(isUser
-              ? {
-                  background:
-                    "linear-gradient(135deg, rgba(167,139,250,0.22), rgba(124,58,237,0.18))",
-                  border: "1px solid rgba(124, 58, 237, 0.28)",
-                  color: "var(--text-primary)",
-                  boxShadow: "0 10px 24px rgba(124, 58, 237, 0.14)",
-                }
-              : {
-                  background: "var(--card-bg)",
-                  border: "1px solid var(--border)",
-                  color: "var(--text-primary)",
-                  boxShadow: "var(--shadow-sm)",
-                }),
+            ...bubbleStyle,
           }}
         >
-          {message.isStreaming && message.content === "" ? (
+          {message.isStreaming && !message.content ? (
             <TypingIndicator />
           ) : (
             <>
-              <span style={{ whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                {message.content}
-              </span>
+              <span>{message.content}</span>
               {message.isStreaming && (
                 <span
-                  ref={dotRef}
                   style={{
                     display: "inline-block",
                     width: 2,
                     height: 14,
                     background: "currentColor",
                     borderRadius: 1,
-                    marginLeft: 2,
+                    marginLeft: 3,
                     verticalAlign: "text-bottom",
                     animation: "blink 0.8s step-end infinite",
                   }}
@@ -147,37 +161,20 @@ const AiIcon = () => (
 );
 
 const TypingIndicator = () => (
-  <div
-    style={{ display: "flex", gap: 5, alignItems: "center", padding: "2px 0" }}
-  >
-    {[0, 1, 2].map((i) => (
+  <div style={{ display: "flex", gap: 5, alignItems: "center", padding: "2px 0" }}>
+    {[0, 1, 2].map((index) => (
       <span
-        key={i}
+        key={index}
         style={{
           width: 7,
           height: 7,
           borderRadius: "50%",
           background: "var(--brand-light)",
           animation: "pulseDot 1.4s ease-in-out infinite",
-          animationDelay: `${i * 0.16}s`,
+          animationDelay: `${index * 0.16}s`,
           display: "inline-block",
-          boxShadow: "0 0 10px rgba(124, 58, 237, 0.18)",
         }}
       />
     ))}
-    <style>{`
-      @keyframes pulseDot {
-        0%, 80%, 100% { transform: scale(0.4); opacity: 0.4; }
-        40% { transform: scale(1); opacity: 1; }
-      }
-      @keyframes blink {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0; }
-      }
-      @keyframes fadeUp {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-    `}</style>
   </div>
 );

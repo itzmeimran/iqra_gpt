@@ -1,33 +1,39 @@
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface Props {
-  onSend: (content: string) => void;
+  onSend: (content: string) => Promise<void> | void;
   disabled?: boolean;
 }
 
-export const ChatInput = ({ onSend, disabled }: Props) => {
+export const ChatInput = ({ onSend, disabled = false }: Props) => {
   const [value, setValue] = useState("");
   const [isFocused, setIsFocused] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
-    const ta = textareaRef.current;
-    if (!ta) return;
-    ta.style.height = "auto";
-    ta.style.height = Math.min(ta.scrollHeight, 180) + "px";
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    textarea.style.height = "auto";
+    textarea.style.height = `${Math.min(textarea.scrollHeight, 180)}px`;
   }, [value]);
 
-  const handleSend = () => {
+  const handleSend = async () => {
     const trimmed = value.trim();
     if (!trimmed || disabled) return;
-    onSend(trimmed);
+
     setValue("");
+    try {
+      await onSend(trimmed);
+    } catch {
+      setValue(trimmed);
+    }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+  const handleKeyDown = async (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      await handleSend();
     }
   };
 
@@ -61,7 +67,7 @@ export const ChatInput = ({ onSend, disabled }: Props) => {
         <textarea
           ref={textareaRef}
           value={value}
-          onChange={(e) => setValue(e.target.value)}
+          onChange={(event) => setValue(event.target.value)}
           onKeyDown={handleKeyDown}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
@@ -86,9 +92,10 @@ export const ChatInput = ({ onSend, disabled }: Props) => {
         />
 
         <button
-          onClick={handleSend}
+          onClick={() => void handleSend()}
           disabled={!canSend}
           title="Send message (Enter)"
+          type="button"
           style={{
             width: 42,
             height: 42,
@@ -111,17 +118,15 @@ export const ChatInput = ({ onSend, disabled }: Props) => {
             transition: "all 0.2s ease",
             transform: canSend ? "translateY(0)" : "none",
           }}
-          onMouseEnter={(e) => {
+          onMouseEnter={(event) => {
             if (!canSend) return;
-            e.currentTarget.style.transform = "translateY(-1px)";
-            e.currentTarget.style.boxShadow =
-              "0 14px 28px rgba(124, 58, 237, 0.34)";
+            event.currentTarget.style.transform = "translateY(-1px)";
+            event.currentTarget.style.boxShadow = "0 14px 28px rgba(124, 58, 237, 0.34)";
           }}
-          onMouseLeave={(e) => {
+          onMouseLeave={(event) => {
             if (!canSend) return;
-            e.currentTarget.style.transform = "translateY(0)";
-            e.currentTarget.style.boxShadow =
-              "0 10px 24px rgba(124, 58, 237, 0.28)";
+            event.currentTarget.style.transform = "translateY(0)";
+            event.currentTarget.style.boxShadow = "0 10px 24px rgba(124, 58, 237, 0.28)";
           }}
         >
           {disabled ? <Spinner /> : <SendIcon />}
@@ -169,14 +174,7 @@ export const ChatInput = ({ onSend, disabled }: Props) => {
 };
 
 const SendIcon = () => (
-  <svg
-    width="17"
-    height="17"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2.1"
-  >
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.1">
     <line x1="22" y1="2" x2="11" y2="13" />
     <polygon points="22 2 15 22 11 13 2 9 22 2" />
   </svg>
@@ -191,18 +189,7 @@ const Spinner = () => (
     style={{ animation: "spin 0.8s linear infinite" }}
   >
     <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    <circle
-      cx="12"
-      cy="12"
-      r="10"
-      stroke="rgba(255,255,255,0.28)"
-      strokeWidth="2.5"
-    />
-    <path
-      d="M12 2a10 10 0 0 1 10 10"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-    />
+    <circle cx="12" cy="12" r="10" stroke="rgba(255,255,255,0.28)" strokeWidth="2.5" />
+    <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
   </svg>
 );

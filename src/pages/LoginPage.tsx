@@ -1,28 +1,44 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useAuthStore } from "../store/authStore";
 
 export const LoginPage = () => {
-  const { login, isLoading } = useAuthStore();
+  const { login, isLoading, error: storeError, clearError } = useAuthStore();
   const [email, setEmail] = useState("demo@genai.app");
   const [password, setPassword] = useState("password123");
-  const [error, setError] = useState("");
+  const [localError, setLocalError] = useState("");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    return () => clearError();
+  }, [clearError]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
-    if (!email.trim()) return setError("Email is required.");
-    if (!password.trim()) return setError("Password is required.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
-      return setError("Enter a valid email address.");
+  const error = useMemo(() => localError || storeError || "", [localError, storeError]);
+
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setLocalError("");
+    clearError();
+
+    if (!email.trim()) {
+      setLocalError("Email is required.");
+      return;
+    }
+
+    if (!password.trim()) {
+      setLocalError("Password is required.");
+      return;
+    }
+
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setLocalError("Enter a valid email address.");
+      return;
+    }
+
     try {
-      await login(email, password);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Login failed.");
+      await login(email.trim(), password);
+    } catch {
+      // handled in store
     }
   };
 
@@ -36,7 +52,6 @@ export const LoginPage = () => {
         overflow: "hidden",
       }}
     >
-      {/* Ambient orbs */}
       <div
         style={{
           position: "absolute",
@@ -45,8 +60,7 @@ export const LoginPage = () => {
           borderRadius: "50%",
           top: -200,
           left: -200,
-          background:
-            "radial-gradient(circle, rgba(20,184,126,0.12) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(20,184,126,0.12) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />
@@ -58,13 +72,10 @@ export const LoginPage = () => {
           borderRadius: "50%",
           bottom: -100,
           right: -100,
-          background:
-            "radial-gradient(circle, rgba(20,184,126,0.08) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(20,184,126,0.08) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />
-
-      {/* Grid pattern */}
       <div
         style={{
           position: "absolute",
@@ -76,7 +87,6 @@ export const LoginPage = () => {
         }}
       />
 
-      {/* Card */}
       <div
         style={{
           margin: "auto",
@@ -88,7 +98,6 @@ export const LoginPage = () => {
           transition: "opacity 0.5s ease, transform 0.5s ease",
         }}
       >
-        {/* Logo */}
         <div style={{ textAlign: "center", marginBottom: 40 }}>
           <div
             style={{
@@ -99,26 +108,16 @@ export const LoginPage = () => {
               height: 52,
               borderRadius: 14,
               marginBottom: 16,
-              background:
-                "linear-gradient(135deg, var(--brand), var(--brand-dark))",
+              background: "linear-gradient(135deg, var(--brand), var(--brand-dark))",
               boxShadow: "0 0 30px rgba(20,184,126,0.4)",
             }}
           >
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-              <path
-                d="M12 2L2 7l10 5 10-5-10-5z"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M2 17l10 5 10-5M2 12l10 5 10-5"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
+              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
+              <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
             </svg>
           </div>
+
           <h1
             style={{
               fontSize: 22,
@@ -127,20 +126,14 @@ export const LoginPage = () => {
               letterSpacing: "-0.5px",
             }}
           >
-            Iqra GPT
+            Iqra AI
           </h1>
-          <p
-            style={{
-              fontSize: 13,
-              color: "var(--text-secondary)",
-              marginTop: 6,
-            }}
-          >
+
+          <p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 6 }}>
             Sign in to your workspace
           </p>
         </div>
 
-        {/* Form card */}
         <div
           style={{
             background: "var(--bg-secondary)",
@@ -164,28 +157,14 @@ export const LoginPage = () => {
               >
                 Email
               </label>
+
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(event) => setEmail(event.target.value)}
                 placeholder="you@example.com"
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  background: "var(--bg-tertiary)",
-                  border:
-                    error && !email
-                      ? "1px solid #f87171"
-                      : "1px solid var(--border)",
-                  borderRadius: 10,
-                  color: "var(--text-primary)",
-                  fontSize: 14,
-                  fontFamily: "Sora, sans-serif",
-                  outline: "none",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = "var(--brand)")}
-                onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                autoComplete="email"
+                style={inputStyle}
               />
             </div>
 
@@ -203,30 +182,20 @@ export const LoginPage = () => {
               >
                 Password
               </label>
+
               <input
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(event) => setPassword(event.target.value)}
                 placeholder="••••••••"
-                style={{
-                  width: "100%",
-                  padding: "12px 14px",
-                  background: "var(--bg-tertiary)",
-                  border: "1px solid var(--border)",
-                  borderRadius: 10,
-                  color: "var(--text-primary)",
-                  fontSize: 14,
-                  fontFamily: "Sora, sans-serif",
-                  outline: "none",
-                  transition: "border-color 0.2s",
-                }}
-                onFocus={(e) => (e.target.style.borderColor = "var(--brand)")}
-                onBlur={(e) => (e.target.style.borderColor = "var(--border)")}
+                autoComplete="current-password"
+                style={inputStyle}
               />
             </div>
 
             {error && (
               <div
+                role="alert"
                 style={{
                   marginBottom: 20,
                   padding: "10px 14px",
@@ -257,68 +226,26 @@ export const LoginPage = () => {
                 fontWeight: 600,
                 fontFamily: "Sora, sans-serif",
                 cursor: isLoading ? "not-allowed" : "pointer",
-                boxShadow: isLoading ? "none" : "0 0 20px rgba(20,184,126,0.3)",
-                transition: "all 0.2s",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 8,
+                boxShadow: isLoading ? "none" : "0 0 20px rgba(20,184,126,0.25)",
               }}
             >
-              {isLoading ? (
-                <>
-                  <Spinner />
-                  Signing in…
-                </>
-              ) : (
-                "Sign In"
-              )}
+              {isLoading ? "Signing in..." : "Sign in"}
             </button>
           </form>
-
-          <div style={{ marginTop: 20, textAlign: "center" }}>
-            <p style={{ fontSize: 12, color: "var(--text-muted)" }}>
-              Demo credentials are pre-filled ↑
-            </p>
-          </div>
         </div>
-
-        <p
-          style={{
-            textAlign: "center",
-            marginTop: 24,
-            fontSize: 12,
-            color: "var(--text-muted)",
-          }}
-        >
-          Designed and Developed by Imran Khan
-        </p>
       </div>
     </div>
   );
 };
 
-const Spinner = () => (
-  <svg
-    width="16"
-    height="16"
-    viewBox="0 0 24 24"
-    fill="none"
-    style={{ animation: "spin 0.8s linear infinite" }}
-  >
-    <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-    <circle
-      cx="12"
-      cy="12"
-      r="10"
-      stroke="rgba(255,255,255,0.3)"
-      strokeWidth="2.5"
-    />
-    <path
-      d="M12 2a10 10 0 0 1 10 10"
-      stroke="white"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-    />
-  </svg>
-);
+const inputStyle = {
+  width: "100%",
+  padding: "12px 14px",
+  background: "var(--bg-tertiary)",
+  border: "1px solid var(--border)",
+  borderRadius: 10,
+  color: "var(--text-primary)",
+  fontSize: 14,
+  fontFamily: "Sora, sans-serif",
+  outline: "none",
+} as const;
