@@ -66,13 +66,12 @@ export const LoginPage = () => {
       setLocalError("");
       clearError();
       const { credential: idToken } = credentialResponse;
-      console.log("credentialResponse", credentialResponse);
       if (!idToken) {
         setLocalError("Google login failed. No credential received.");
         return;
       }
-      const baseURL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8000'
-      const response = await fetch(`${baseURL}api/auth/google`, {
+
+      const response = await fetch("http://localhost:8000/api/auth/google", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
