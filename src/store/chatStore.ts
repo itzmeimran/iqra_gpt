@@ -237,7 +237,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
       const accessToken = localStorage.getItem("genai:accessToken");
 
       const response = await fetch(
-        `${baseURL}/api/chats/${activeSessionId}/messages/stream`,
+        `${baseURL}api/chats/${activeSessionId}/messages/stream`,
         {
           method: "POST",
           headers: {
