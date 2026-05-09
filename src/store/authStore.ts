@@ -27,8 +27,13 @@ interface AuthStore {
   _forceLogout: () => void;
 }
 
-function applyAuth(set: (partial: Partial<AuthStore>) => void, data: AuthResponse): void {
-  tokenStorage.set(data.accessToken, data.refreshToken);
+function applyAuth(
+  set: (partial: Partial<AuthStore>) => void,
+  data: AuthResponse,
+): void {
+  const { accessToken, refreshToken } = data;
+  console.log("AccessToken,RefreshToken", accessToken, refreshToken);
+  tokenStorage.set(accessToken, refreshToken);
   set({
     user: data.user,
     isAuthenticated: true,
@@ -49,11 +54,14 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true, error: null });
 
         try {
-          const { data } = await apiClient.post<AuthResponse>("/api/auth/register", {
-            name,
-            email,
-            password,
-          });
+          const { data } = await apiClient.post<AuthResponse>(
+            "/api/auth/register",
+            {
+              name,
+              email,
+              password,
+            },
+          );
 
           applyAuth(set, data);
         } catch (error: unknown) {
@@ -67,10 +75,13 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true, error: null });
 
         try {
-          const { data } = await apiClient.post<AuthResponse>("/api/auth/login", {
-            email,
-            password,
-          });
+          const { data } = await apiClient.post<AuthResponse>(
+            "/api/auth/login",
+            {
+              email,
+              password,
+            },
+          );
 
           applyAuth(set, data);
         } catch (error: unknown) {
@@ -84,10 +95,13 @@ export const useAuthStore = create<AuthStore>()(
         set({ isLoading: true, error: null });
 
         try {
-          const { data } = await apiClient.post<AuthResponse>("/api/auth/google", {
-            idToken,
-          });
-
+          const { data } = await apiClient.post<AuthResponse>(
+            "http://localhost:8000/api/auth/google",
+            {
+              idToken,
+            },
+          );
+          console.log("data", data);
           applyAuth(set, data);
         } catch (error: unknown) {
           const message = extractError(error);
@@ -165,7 +179,11 @@ function extractError(error: unknown): string {
       error as { response?: { data?: { detail?: string; message?: string } } }
     ).response;
 
-    return response?.data?.detail ?? response?.data?.message ?? "An unexpected error occurred.";
+    return (
+      response?.data?.detail ??
+      response?.data?.message ??
+      "An unexpected error occurred."
+    );
   }
 
   if (error instanceof Error) {

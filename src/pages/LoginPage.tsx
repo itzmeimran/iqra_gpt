@@ -1,19 +1,38 @@
 import { useEffect, useMemo, useState } from "react";
+import { GoogleLogin } from "@react-oauth/google";
 import { useAuthStore } from "../store/authStore";
+import { useNavigate } from "react-router-dom";
 
 export const LoginPage = () => {
-  const { login, isLoading, error: storeError, clearError } = useAuthStore();
-  const [email, setEmail] = useState("demo@genai.app");
-  const [password, setPassword] = useState("password123");
+  const {
+    login,
+    googleSSO,
+    isLoading,
+    error: storeError,
+    clearError,
+    isAuthenticated,
+  } = useAuthStore();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [localError, setLocalError] = useState("");
   const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/chat", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
 
   useEffect(() => {
     setMounted(true);
     return () => clearError();
   }, [clearError]);
 
-  const error = useMemo(() => localError || storeError || "", [localError, storeError]);
+  const error = useMemo(
+    () => localError || storeError || "",
+    [localError, storeError],
+  );
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -42,6 +61,45 @@ export const LoginPage = () => {
     }
   };
 
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    try {
+      setLocalError("");
+      clearError();
+      const { credential: idToken } = credentialResponse;
+      console.log("credentialResponse", credentialResponse);
+      if (!idToken) {
+        setLocalError("Google login failed. No credential received.");
+        return;
+      }
+
+      const response = await fetch("http://localhost:8000/api/auth/google", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          idToken,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data?.message || "Google login failed");
+      }
+
+      await googleSSO(idToken);
+      navigate("/chat", { replace: true });
+
+    } catch (err: any) {
+      setLocalError(err.message || "Google sign-in failed.");
+    }
+  };
+
+  const handleGoogleError = () => {
+    setLocalError("Google sign-in failed.");
+  };
+
   return (
     <div
       style={{
@@ -60,7 +118,8 @@ export const LoginPage = () => {
           borderRadius: "50%",
           top: -200,
           left: -200,
-          background: "radial-gradient(circle, rgba(20,184,126,0.12) 0%, transparent 70%)",
+          background:
+            "radial-gradient(circle, rgba(20,184,126,0.12) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />
@@ -72,7 +131,8 @@ export const LoginPage = () => {
           borderRadius: "50%",
           bottom: -100,
           right: -100,
-          background: "radial-gradient(circle, rgba(20,184,126,0.08) 0%, transparent 70%)",
+          background:
+            "radial-gradient(circle, rgba(20,184,126,0.08) 0%, transparent 70%)",
           pointerEvents: "none",
         }}
       />
@@ -108,13 +168,24 @@ export const LoginPage = () => {
               height: 52,
               borderRadius: 14,
               marginBottom: 16,
-              background: "linear-gradient(135deg, var(--brand), var(--brand-dark))",
+              background:
+                "linear-gradient(135deg, var(--brand), var(--brand-dark))",
               boxShadow: "0 0 30px rgba(20,184,126,0.4)",
             }}
           >
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none">
-              <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
-              <path d="M2 17l10 5 10-5M2 12l10 5 10-5" stroke="white" strokeWidth="1.5" strokeLinejoin="round" />
+              <path
+                d="M12 2L2 7l10 5 10-5-10-5z"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M2 17l10 5 10-5M2 12l10 5 10-5"
+                stroke="white"
+                strokeWidth="1.5"
+                strokeLinejoin="round"
+              />
             </svg>
           </div>
 
@@ -129,7 +200,13 @@ export const LoginPage = () => {
             Iqra AI
           </h1>
 
-          <p style={{ fontSize: 13, color: "var(--text-secondary)", marginTop: 6 }}>
+          <p
+            style={{
+              fontSize: 13,
+              color: "var(--text-secondary)",
+              marginTop: 6,
+            }}
+          >
             Sign in to your workspace
           </p>
         </div>
@@ -226,11 +303,57 @@ export const LoginPage = () => {
                 fontWeight: 600,
                 fontFamily: "Sora, sans-serif",
                 cursor: isLoading ? "not-allowed" : "pointer",
-                boxShadow: isLoading ? "none" : "0 0 20px rgba(20,184,126,0.25)",
+                boxShadow: isLoading
+                  ? "none"
+                  : "0 0 20px rgba(20,184,126,0.25)",
               }}
             >
               {isLoading ? "Signing in..." : "Sign in"}
             </button>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 12,
+                margin: "18px 0",
+              }}
+            >
+              <div
+                style={{ flex: 1, height: 1, background: "var(--border)" }}
+              />
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "var(--text-secondary)",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.5px",
+                }}
+              >
+                Or continue with
+              </span>
+              <div
+                style={{ flex: 1, height: 1, background: "var(--border)" }}
+              />
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                marginTop: 4,
+              }}
+            >
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={handleGoogleError}
+                theme="outline"
+                size="large"
+                text="signin_with"
+                shape="rectangular"
+                width="330"
+              />
+            </div>
           </form>
         </div>
       </div>

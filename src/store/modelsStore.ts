@@ -31,7 +31,7 @@ export const useModelsStore = create<ModelsStore>()(
   persist(
     (set, get) => ({
       models: [],
-      defaultModel: "",
+      defaultModel: "gemma4:e4b",
       selectedModel: "",
       isLoading: false,
       error: null,
@@ -43,7 +43,9 @@ export const useModelsStore = create<ModelsStore>()(
           const { data } = await apiClient.get<ModelsResponse>("/api/models");
 
           set((state) => {
-            const nextSelectedModel = data.models.some((model) => model.id === state.selectedModel)
+            const nextSelectedModel = data.models.some(
+              (model) => model.id === state.selectedModel,
+            )
               ? state.selectedModel
               : data.defaultModel;
 
@@ -86,7 +88,11 @@ function extractError(error: unknown): string {
       error as { response?: { data?: { detail?: string; message?: string } } }
     ).response;
 
-    return response?.data?.detail ?? response?.data?.message ?? "An unexpected error occurred.";
+    return (
+      response?.data?.detail ??
+      response?.data?.message ??
+      "An unexpected error occurred."
+    );
   }
 
   if (error instanceof Error) {

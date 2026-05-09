@@ -29,7 +29,7 @@ export const Header = ({ onMobileMenuOpen }: Props) => {
     setTheme(nextTheme);
     localStorage.setItem("theme", nextTheme);
   };
-
+  
   return (
     <header
       style={{
