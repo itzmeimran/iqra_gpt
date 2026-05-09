@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
@@ -333,15 +333,24 @@ const CodeBlock = ({
 }: React.HTMLAttributes<HTMLPreElement>) => {
   const [copied, setCopied] = useState(false);
 
-  // Extract language from highlight.js class e.g. "hljs language-python"
-  const codeEl = (children as React.ReactElement)?.props;
-  const className: string = codeEl?.className ?? "";
+  type CodeElementProps = {
+    className?: string;
+    children?: React.ReactNode;
+  };
+
+  const codeEl = React.isValidElement(children)
+    ? (children.props as CodeElementProps)
+    : undefined;
+
+  const className = codeEl?.className ?? "";
+
   const language =
     className
       .replace(/hljs\s?/, "")
       .replace("language-", "")
       .trim() || "code";
-  const rawCode: string = codeEl?.children ?? "";
+
+  const rawCode = codeEl?.children ?? "";
 
   const handleCopy = () => {
     navigator.clipboard.writeText(
@@ -356,10 +365,11 @@ const CodeBlock = ({
       <div className="code-block-header">
         <span>{language}</span>
         <button
+          type="button"
           className={`copy-btn ${copied ? "copied" : ""}`}
           onClick={handleCopy}
         >
-          {copied ? "✓ Copied" : "Copy"}
+          {copied ? "Copied" : "Copy"}
         </button>
       </div>
       {children}
