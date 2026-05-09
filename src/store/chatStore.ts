@@ -104,7 +104,7 @@ export const useChatStore = create<ChatStore>()((set, get) => ({
     }
   },
 
-  createSession: async (model = "gemma4:e4b", title = "New Chat") => {
+  createSession: async (model = "gemma4:31b", title = "New Chat") => {
     const { data } = await apiClient.post<ChatSession>("/api/chats", {
       model,
       title,
