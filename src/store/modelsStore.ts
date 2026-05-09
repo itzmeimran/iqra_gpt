@@ -31,7 +31,7 @@ export const useModelsStore = create<ModelsStore>()(
   persist(
     (set, get) => ({
       models: [],
-      defaultModel: "gemma4:e4b",
+      defaultModel: "gemma4:31b",
       selectedModel: "",
       isLoading: false,
       error: null,

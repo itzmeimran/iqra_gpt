@@ -32,7 +32,6 @@ function applyAuth(
   data: AuthResponse,
 ): void {
   const { accessToken, refreshToken } = data;
-  console.log("AccessToken,RefreshToken", accessToken, refreshToken);
   tokenStorage.set(accessToken, refreshToken);
   set({
     user: data.user,
