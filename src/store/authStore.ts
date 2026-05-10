@@ -101,7 +101,6 @@ export const useAuthStore = create<AuthStore>()(
               idToken,
             },
           );
-          console.log("data", data);
           applyAuth(set, data);
         } catch (error: unknown) {
           const message = extractError(error);
