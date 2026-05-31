@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { GoogleLogin } from "@react-oauth/google";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
 import GoogleSignInButton from "./GoogleSignInButton";
@@ -7,7 +6,6 @@ import GoogleSignInButton from "./GoogleSignInButton";
 export const LoginPage = () => {
   const {
     login,
-    googleSSO,
     isLoading,
     error: storeError,
     clearError,
@@ -62,38 +60,38 @@ export const LoginPage = () => {
     }
   };
 
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    try {
-      setLocalError("");
-      clearError();
-      const { credential: idToken } = credentialResponse;
-      if (!idToken) {
-        setLocalError("Google login failed. No credential received.");
-        return;
-      }
-      const baseURL = import.meta.env.VITE_API_BASE_URL;
-      const response = await fetch(`${baseURL}api/auth/google`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          idToken,
-        }),
-      });
+  // const handleGoogleSuccess = async (credentialResponse: any) => {
+  //   try {
+  //     setLocalError("");
+  //     clearError();
+  //     const { credential: idToken } = credentialResponse;
+  //     if (!idToken) {
+  //       setLocalError("Google login failed. No credential received.");
+  //       return;
+  //     }
+  //     const baseURL = import.meta.env.VITE_API_BASE_URL;
+  //     const response = await fetch(`${baseURL}api/auth/google`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({
+  //         idToken,
+  //       }),
+  //     });
 
-      const data = await response.json();
+  //     const data = await response.json();
 
-      if (!response.ok) {
-        throw new Error(data?.message || "Google login failed");
-      }
+  //     if (!response.ok) {
+  //       throw new Error(data?.message || "Google login failed");
+  //     }
 
-      await googleSSO(idToken);
-      navigate("/chat", { replace: true });
-    } catch (err: any) {
-      setLocalError(err.message || "Google sign-in failed.");
-    }
-  };
+  //     await googleSSO(idToken);
+  //     navigate("/chat", { replace: true });
+  //   } catch (err: any) {
+  //     setLocalError(err.message || "Google sign-in failed.");
+  //   }
+  // };
 
   // const handleGoogleError = () => {
   //   setLocalError("Google sign-in failed.");
