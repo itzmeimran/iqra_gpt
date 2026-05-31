@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { GoogleLogin } from "@react-oauth/google";
 import { useAuthStore } from "../store/authStore";
 import { useNavigate } from "react-router-dom";
+import GoogleSignInButton from "./GoogleSignInButton";
 
 export const LoginPage = () => {
   const {
@@ -94,9 +95,10 @@ export const LoginPage = () => {
     }
   };
 
-  const handleGoogleError = () => {
-    setLocalError("Google sign-in failed.");
-  };
+  // const handleGoogleError = () => {
+  //   setLocalError("Google sign-in failed.");
+  // };
+
 
   return (
     <div
@@ -342,15 +344,7 @@ export const LoginPage = () => {
                 marginTop: 4,
               }}
             >
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={handleGoogleError}
-                theme="outline"
-                size="large"
-                text="signin_with"
-                shape="rectangular"
-                width="330"
-              />
+              <GoogleSignInButton />
             </div>
           </form>
         </div>

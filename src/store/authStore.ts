@@ -17,10 +17,10 @@ interface AuthStore {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-
   register: (name: string, email: string, password: string) => Promise<void>;
   login: (email: string, password: string) => Promise<void>;
   googleSSO: (idToken: string) => Promise<void>;
+  googleLogin: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   fetchMe: () => Promise<void>;
   clearError: () => void;
@@ -69,9 +69,30 @@ export const useAuthStore = create<AuthStore>()(
           throw new Error(message);
         }
       },
+      
+      googleLogin: async (email: string, password: string) => {
+       
+        set({ isLoading: true, error: null });
+
+        try {
+          const { data } = await apiClient.post<AuthResponse>(
+            "/api/auth/login",
+            {
+              email,
+              password,
+            },
+          );
+
+          applyAuth(set, data);
+        } catch (error: unknown) {
+          const message = extractError(error);
+          set({ isLoading: false, error: message });
+          throw new Error(message);
+        }
+      },
 
       login: async (email: string, password: string) => {
-        set({ isLoading: true, error: null });
+      set({ isLoading: true, error: null });
 
         try {
           const { data } = await apiClient.post<AuthResponse>(

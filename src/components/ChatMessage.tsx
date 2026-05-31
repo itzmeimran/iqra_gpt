@@ -252,7 +252,7 @@ export const ChatMessage = ({ message }: Props) => {
           }}
         >
           {message.isStreaming && !message.content ? (
-            <TypingIndicator />
+            <Thinking />
           ) : isUser ? (
             /* User messages: plain text, no markdown */
             <span
@@ -392,7 +392,14 @@ const AiIcon = () => (
     />
   </svg>
 );
-
+const Thinking = () => (
+  <div className="thinking-bubble">
+    <span className="dot"></span>
+    <span className="dot"></span>
+    <span className="dot"></span>
+    <span>Thinking</span>
+  </div>
+);
 const TypingIndicator = () => (
   <div
     style={{ display: "flex", gap: 5, alignItems: "center", padding: "2px 0" }}
