@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useAuthStore } from "../store/authStore";
+
 // ── Google "G" Logo ────────────────────────────────────────────────────────────
 const GoogleLogo = () => (
   <svg
@@ -228,6 +229,19 @@ const validateEmail = (val: string): string => {
   return "";
 };
 
+// ── Responsive hook ────────────────────────────────────────────────────────────
+const useIsMobile = (breakpoint = 600): boolean => {
+  const [isMobile, setIsMobile] = useState(
+    () => window.innerWidth <= breakpoint
+  );
+  React.useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth <= breakpoint);
+    window.addEventListener("resize", handler);
+    return () => window.removeEventListener("resize", handler);
+  }, [breakpoint]);
+  return isMobile;
+};
+
 // ── Main Page ──────────────────────────────────────────────────────────────────
 type Step = "email" | "password";
 
@@ -245,8 +259,10 @@ const GoogleSignInPage: React.FC = () => {
   const [hoverForgot, setHoverForgot] = useState(false);
   const [hoverBack, setHoverBack] = useState(false);
 
+  const isMobile = useIsMobile(600);
+
   // ── Step 1: validate email then advance ──
-  const handleNext = async() => {
+  const handleNext = async () => {
     if (step === "email") {
       const err = validateEmail(email);
       setEmailError(err);
@@ -265,15 +281,15 @@ const GoogleSignInPage: React.FC = () => {
     }
     if (password.length < 6) {
       setPasswordError(
-        "Wrong password. Try again or click 'Forgot password' to reset it.",
+        "Wrong password. Try again or click 'Forgot password' to reset it."
       );
       return;
     }
     setPasswordError("");
-    try{
-        await googleLogin(email,password)
-    }catch(e){
-        alert('Something went wrong')
+    try {
+      await googleLogin(email, password);
+    } catch (e) {
+      alert("Something went wrong");
     }
   };
 
@@ -287,209 +303,289 @@ const GoogleSignInPage: React.FC = () => {
   const leftSubheading = step === "email" ? "Use your Google Account" : email;
 
   const { googleLogin } = useAuthStore();
-  
-  
+
+  // ── Responsive card layout ────────────────────────────────────────────────
+  const cardStyle: React.CSSProperties = {
+    backgroundColor: "#fff",
+    borderRadius: isMobile ? "0" : "28px",
+    padding: isMobile ? "32px 24px 28px" : "48px 40px 36px",
+    display: "flex",
+    flexDirection: isMobile ? "column" : "row",
+    gap: isMobile ? "24px" : "80px",
+    alignItems: "flex-start",
+    width: "100%",
+    maxWidth: isMobile ? "100%" : "860px",
+    boxSizing: "border-box",
+  };
+
+  const leftColStyle: React.CSSProperties = {
+    display: "flex",
+    flexDirection: isMobile ? "row" : "column",
+    alignItems: isMobile ? "center" : "flex-start",
+    gap: isMobile ? "12px" : "12px",
+    flexShrink: 0,
+    paddingTop: isMobile ? "0" : "8px",
+    minWidth: isMobile ? "unset" : "200px",
+    width: isMobile ? "100%" : "auto",
+  };
+
+  const headingStyle: React.CSSProperties = {
+    margin: isMobile ? "0" : "8px 0 0",
+    fontSize: isMobile ? "24px" : "32px",
+    fontWeight: 400,
+    color: "#1f1f1f",
+    letterSpacing: "-0.5px",
+    lineHeight: 1.2,
+  };
+
+  // On mobile, hide the subheading from the left column since it shows
+  // inline next to the logo & title — avoids duplication
+  const showLeftSubheading = !isMobile || step === "email";
+
   return (
-    <div style={styles.pageWrapper}>
-      {/* ── Card ── */}
-      <div style={styles.card}>
-        {/* Left column */}
-        <div style={styles.leftCol}>
-          <GoogleLogo />
-          <h1 style={styles.heading}>{leftHeading}</h1>
-          <p
-            style={{
-              ...styles.subheading,
-              fontSize: step === "password" ? "14px" : "16px",
-              fontWeight: step === "password" ? 500 : 400,
-              color: step === "password" ? "#1f1f1f" : "#444746",
-            }}
-          >
-            {leftSubheading}
-          </p>
-        </div>
+    <>
+      {/* Inject a media-query for the footer to wrap on small screens */}
+      <style>{`
+        @media (max-width: 480px) {
+          .gsip-footer {
+            flex-direction: column !important;
+            align-items: flex-start !important;
+            gap: 12px !important;
+          }
+        }
+        @media (max-width: 600px) {
+          .gsip-page {
+            justify-content: flex-start !important;
+            padding: 0 !important;
+          }
+        }
+      `}</style>
 
-        {/* Right column */}
-        <div style={styles.rightCol}>
-          {step === "email" ? (
-            <>
-              {/* Email field */}
-              <FloatingInput
-                label="Email or phone"
-                type="email"
-                value={email}
-                onChange={(v) => {
-                  setEmail(v);
-                  if (emailError) setEmailError("");
-                }}
-                error={emailError}
-                autoComplete="email"
-              />
-
-              {/* Forgot email */}
-              <div style={styles.forgotRow}>
-                <a
-                  href="#"
+      <div className="gsip-page" style={styles.pageWrapper}>
+        {/* ── Card ── */}
+        <div style={cardStyle}>
+          {/* Left column */}
+          <div style={leftColStyle}>
+            <GoogleLogo />
+            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+              <h1 style={headingStyle}>{leftHeading}</h1>
+              {showLeftSubheading && (
+                <p
                   style={{
-                    ...styles.link,
-                    color: hoverForgot ? "#1558b0" : "#1a73e8",
-                    textDecoration: hoverForgot ? "underline" : "none",
-                  }}
-                  onMouseEnter={() => setHoverForgot(true)}
-                  onMouseLeave={() => setHoverForgot(false)}
-                >
-                  Forgot email?
-                </a>
-              </div>
-
-              {/* Guest notice */}
-              <p style={styles.guestNotice}>
-                Not your computer? Use Guest mode to sign in privately.{" "}
-                <a href="#" style={styles.learnMore}>
-                  Learn more
-                </a>
-              </p>
-
-              {/* Actions */}
-              <div style={styles.actions}>
-                <button
-                  style={{
-                    ...styles.createBtn,
-                    backgroundColor: hoverCreate ? "#e8f0fe" : "transparent",
-                  }}
-                  onMouseEnter={() => setHoverCreate(true)}
-                  onMouseLeave={() => setHoverCreate(false)}
-                  type="button"
-                >
-                  Create account
-                </button>
-                <button
-                  style={{
-                    ...styles.nextBtn,
-                    backgroundColor: hoverNext ? "#1557b0" : "#1a73e8",
-                    boxShadow: hoverNext
-                      ? "0 1px 3px rgba(0,0,0,.3)"
-                      : "0 1px 2px rgba(0,0,0,.2)",
-                  }}
-                  onMouseEnter={() => setHoverNext(true)}
-                  onMouseLeave={() => setHoverNext(false)}
-                  onClick={handleNext}
-                  type="button"
-                >
-                  Next
-                </button>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Password field */}
-              <FloatingInput
-                label="Enter your password"
-                type={showPassword ? "text" : "password"}
-                value={password}
-                onChange={(v) => {
-                  setPassword(v);
-                  if (passwordError) setPasswordError("");
-                }}
-                error={passwordError}
-                autoComplete="current-password"
-                rightSlot={
-                  <span onClick={() => setShowPassword((p) => !p)}>
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                  </span>
-                }
-              />
-
-              {/* Show password checkbox */}
-              <label style={styles.showPasswordRow}>
-                <input
-                  type="checkbox"
-                  checked={showPassword}
-                  onChange={(e) => setShowPassword(e.target.checked)}
-                  style={{
-                    accentColor: "#1a73e8",
-                    width: "16px",
-                    height: "16px",
-                    cursor: "pointer",
-                  }}
-                />
-                <span
-                  style={{
-                    fontSize: "14px",
-                    color: "#444746",
+                    margin: 0,
+                    fontSize:
+                      step === "password" && !isMobile ? "14px" : "16px",
+                    fontWeight: step === "password" && !isMobile ? 500 : 400,
+                    color:
+                      step === "password" && !isMobile ? "#1f1f1f" : "#444746",
                     fontFamily: "'Google Sans', Roboto, sans-serif",
                   }}
                 >
-                  Show password
-                </span>
-              </label>
+                  {leftSubheading}
+                </p>
+              )}
+            </div>
+          </div>
 
-              {/* Forgot password */}
-              <div style={styles.forgotRow}>
-                <a
-                  href="#"
-                  style={{
-                    ...styles.link,
-                    color: hoverForgot ? "#1558b0" : "#1a73e8",
-                    textDecoration: hoverForgot ? "underline" : "none",
+          {/* Right column */}
+          <div
+            style={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              gap: "16px",
+              paddingTop: isMobile ? "0" : "8px",
+              width: isMobile ? "100%" : "auto",
+            }}
+          >
+            {step === "email" ? (
+              <>
+                {/* Email field */}
+                <FloatingInput
+                  label="Email or phone"
+                  type="email"
+                  value={email}
+                  onChange={(v) => {
+                    setEmail(v);
+                    if (emailError) setEmailError("");
                   }}
-                  onMouseEnter={() => setHoverForgot(true)}
-                  onMouseLeave={() => setHoverForgot(false)}
-                >
-                  Forgot password?
-                </a>
-              </div>
+                  error={emailError}
+                  autoComplete="email"
+                />
 
-              {/* Actions */}
-              <div style={styles.actions}>
-                <button
-                  style={{
-                    ...styles.createBtn,
-                    backgroundColor: hoverBack ? "#e8f0fe" : "transparent",
+                {/* Forgot email */}
+                <div style={styles.forgotRow}>
+                  <a
+                    href="#"
+                    style={{
+                      ...styles.link,
+                      color: hoverForgot ? "#1558b0" : "#1a73e8",
+                      textDecoration: hoverForgot ? "underline" : "none",
+                    }}
+                    onMouseEnter={() => setHoverForgot(true)}
+                    onMouseLeave={() => setHoverForgot(false)}
+                  >
+                    Forgot email?
+                  </a>
+                </div>
+
+                {/* Guest notice */}
+                <p style={styles.guestNotice}>
+                  Not your computer? Use Guest mode to sign in privately.{" "}
+                  <a href="#" style={styles.learnMore}>
+                    Learn more
+                  </a>
+                </p>
+
+                {/* Actions */}
+                <div style={styles.actions}>
+                  <button
+                    style={{
+                      ...styles.createBtn,
+                      backgroundColor: hoverCreate ? "#e8f0fe" : "transparent",
+                    }}
+                    onMouseEnter={() => setHoverCreate(true)}
+                    onMouseLeave={() => setHoverCreate(false)}
+                    type="button"
+                  >
+                    Create account
+                  </button>
+                  <button
+                    style={{
+                      ...styles.nextBtn,
+                      backgroundColor: hoverNext ? "#1557b0" : "#1a73e8",
+                      boxShadow: hoverNext
+                        ? "0 1px 3px rgba(0,0,0,.3)"
+                        : "0 1px 2px rgba(0,0,0,.2)",
+                    }}
+                    onMouseEnter={() => setHoverNext(true)}
+                    onMouseLeave={() => setHoverNext(false)}
+                    onClick={handleNext}
+                    type="button"
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Password field */}
+                <FloatingInput
+                  label="Enter your password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(v) => {
+                    setPassword(v);
+                    if (passwordError) setPasswordError("");
                   }}
-                  onMouseEnter={() => setHoverBack(true)}
-                  onMouseLeave={() => setHoverBack(false)}
-                  onClick={handleBack}
-                  type="button"
-                >
-                  Back
-                </button>
-                <button
-                  style={{
-                    ...styles.nextBtn,
-                    backgroundColor: hoverNext ? "#1557b0" : "#1a73e8",
-                    boxShadow: hoverNext
-                      ? "0 1px 3px rgba(0,0,0,.3)"
-                      : "0 1px 2px rgba(0,0,0,.2)",
-                  }}
-                  onMouseEnter={() => setHoverNext(true)}
-                  onMouseLeave={() => setHoverNext(false)}
-                  onClick={handleNext}
-                  type="button"
-                >
-                  Next
-                </button>
-              </div>
-            </>
-          )}
+                  error={passwordError}
+                  autoComplete="current-password"
+                  rightSlot={
+                    <span onClick={() => setShowPassword((p) => !p)}>
+                      {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </span>
+                  }
+                />
+
+                {/* Show password checkbox */}
+                <label style={styles.showPasswordRow}>
+                  <input
+                    type="checkbox"
+                    checked={showPassword}
+                    onChange={(e) => setShowPassword(e.target.checked)}
+                    style={{
+                      accentColor: "#1a73e8",
+                      width: "16px",
+                      height: "16px",
+                      cursor: "pointer",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "14px",
+                      color: "#444746",
+                      fontFamily: "'Google Sans', Roboto, sans-serif",
+                    }}
+                  >
+                    Show password
+                  </span>
+                </label>
+
+                {/* Forgot password */}
+                <div style={styles.forgotRow}>
+                  <a
+                    href="#"
+                    style={{
+                      ...styles.link,
+                      color: hoverForgot ? "#1558b0" : "#1a73e8",
+                      textDecoration: hoverForgot ? "underline" : "none",
+                    }}
+                    onMouseEnter={() => setHoverForgot(true)}
+                    onMouseLeave={() => setHoverForgot(false)}
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+
+                {/* Actions */}
+                <div style={styles.actions}>
+                  <button
+                    style={{
+                      ...styles.createBtn,
+                      backgroundColor: hoverBack ? "#e8f0fe" : "transparent",
+                    }}
+                    onMouseEnter={() => setHoverBack(true)}
+                    onMouseLeave={() => setHoverBack(false)}
+                    onClick={handleBack}
+                    type="button"
+                  >
+                    Back
+                  </button>
+                  <button
+                    style={{
+                      ...styles.nextBtn,
+                      backgroundColor: hoverNext ? "#1557b0" : "#1a73e8",
+                      boxShadow: hoverNext
+                        ? "0 1px 3px rgba(0,0,0,.3)"
+                        : "0 1px 2px rgba(0,0,0,.2)",
+                    }}
+                    onMouseEnter={() => setHoverNext(true)}
+                    onMouseLeave={() => setHoverNext(false)}
+                    onClick={handleNext}
+                    type="button"
+                  >
+                    Next
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* ── Footer ── */}
+        <footer
+          className="gsip-footer"
+          style={{
+            ...styles.footer,
+            maxWidth: isMobile ? "100%" : "860px",
+            paddingInline: isMobile ? "24px" : "4px",
+            marginTop: isMobile ? "12px" : "16px",
+          }}
+        >
+          <div style={styles.langSelector}>
+            <span style={styles.langText}>English (United States)</span>
+            <ChevronDown />
+          </div>
+          <nav style={styles.footerLinks}>
+            {["Help", "Privacy", "Terms"].map((label) => (
+              <a key={label} href="#" style={styles.footerLink}>
+                {label}
+              </a>
+            ))}
+          </nav>
+        </footer>
       </div>
-
-      {/* ── Footer ── */}
-      <footer style={styles.footer}>
-        <div style={styles.langSelector}>
-          <span style={styles.langText}>English (United States)</span>
-          <ChevronDown />
-        </div>
-        <nav style={styles.footerLinks}>
-          {["Help", "Privacy", "Terms"].map((label) => (
-            <a key={label} href="#" style={styles.footerLink}>
-              {label}
-            </a>
-          ))}
-        </nav>
-      </footer>
-    </div>
+    </>
   );
 };
 
@@ -505,44 +601,6 @@ const styles: Record<string, React.CSSProperties> = {
     fontFamily: "'Google Sans', Roboto, sans-serif",
     padding: "24px 16px",
   },
-  card: {
-    backgroundColor: "#fff",
-    borderRadius: "28px",
-    padding: "48px 40px 36px",
-    display: "flex",
-    flexDirection: "row",
-    gap: "80px",
-    alignItems: "flex-start",
-    width: "100%",
-    maxWidth: "860px",
-    boxSizing: "border-box",
-  },
-  leftCol: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    flexShrink: 0,
-    paddingTop: "8px",
-    minWidth: "200px",
-  },
-  heading: {
-    margin: "8px 0 0",
-    fontSize: "32px",
-    fontWeight: 400,
-    color: "#1f1f1f",
-    letterSpacing: "-0.5px",
-    lineHeight: 1.2,
-  },
-  subheading: {
-    margin: 0,
-  },
-  rightCol: {
-    flex: 1,
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-    paddingTop: "8px",
-  },
   forgotRow: { marginTop: "-4px" },
   link: {
     fontSize: "14px",
@@ -555,6 +613,7 @@ const styles: Record<string, React.CSSProperties> = {
     color: "#444746",
     lineHeight: 1.5,
     margin: "4px 0 0",
+    fontFamily: "'Google Sans', Roboto, sans-serif",
   },
   learnMore: {
     color: "#1a73e8",
@@ -604,12 +663,9 @@ const styles: Record<string, React.CSSProperties> = {
   },
   footer: {
     width: "100%",
-    maxWidth: "860px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: "16px",
-    paddingInline: "4px",
     boxSizing: "border-box",
   },
   langSelector: {
